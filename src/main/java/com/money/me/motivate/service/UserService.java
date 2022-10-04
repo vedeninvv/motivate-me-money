@@ -14,7 +14,6 @@ import com.money.me.motivate.mapstruct.mapper.UserMapper;
 import com.money.me.motivate.repository.RoleRepository;
 import com.money.me.motivate.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -89,12 +88,12 @@ public class UserService {
 
     public AppUser getAppUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(String.format("Username '%s' not found", username)));
+                .orElseThrow(() -> new NotFoundException(String.format("Username '%s' not found", username)));
     }
 
     public UserGetDto updateUser(String username, UserPutDto userPutDto) {
         AppUser user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(String.format("Username '%s' not found", username)));
+                .orElseThrow(() -> new NotFoundException(String.format("Username '%s' not found", username)));
         if (!passwordEncoder.matches(userPutDto.getOldPassword(), user.getPassword())) {
             throw new PasswordNotCorrectException(String.format("Password for user '%s' not correct", username));
         }

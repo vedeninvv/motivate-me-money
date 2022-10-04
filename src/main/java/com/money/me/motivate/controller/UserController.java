@@ -42,6 +42,8 @@ public class UserController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = UserGetDto.class))}),
             @ApiResponse(responseCode = "400", description = "Request has unknown role",
+                    content = @Content),
+            @ApiResponse(responseCode = "403", description = "Request from appUser without role 'ADMIN'",
                     content = @Content)})
     @PostMapping
     @PreAuthorize("hasAuthority('admin:write')")
