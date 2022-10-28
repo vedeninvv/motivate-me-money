@@ -92,24 +92,6 @@ public class TaskController {
         return taskService.completeTask(taskId, principal.getName());
     }
 
-    @Operation(summary = "Get all tasks by user",
-            security = @SecurityRequirement(name = "basicAuth"))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "All user's tasks",
-                    content = {@Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = TaskGetDto.class)))}),
-            @ApiResponse(responseCode = "404", description = "Username not found",
-                    content = @Content)})
-    @GetMapping("/all")
-    @PreAuthorize("hasAuthority('allTask:read')")
-    public List<TaskGetDto> getAllByUsername(@RequestParam String username) {
-        try {
-            return taskService.getAllTasksByUsername(username);
-        } catch (UsernameNotFoundException exception) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, exception.getMessage());
-        }
-    }
-
     @Operation(summary = "Get all tasks by user and current status",
             security = @SecurityRequirement(name = "basicAuth"))
     @ApiResponses(value = {
@@ -120,8 +102,12 @@ public class TaskController {
                     content = @Content)})
     @GetMapping("/all/completed")
     @PreAuthorize("hasAuthority('allTask:read')")
-    public List<TaskGetDto> getAllByUsernameAndCompleted(@RequestParam String username, @RequestParam boolean completed) {
-        return taskService.getAllTasksByUsernameAndCompleted(username, completed);
+    public List<TaskGetDto> getAllByUsernameAndCompleted(@RequestParam String username, @RequestParam(required = false) Boolean completed) {
+        if (completed != null) {
+            return taskService.getAllTasksByUsernameAndCompleted(username, completed);
+        } else {
+            return taskService.getAllTasksByUsername(username);
+        }
     }
 
     @Operation(summary = "Delete task",

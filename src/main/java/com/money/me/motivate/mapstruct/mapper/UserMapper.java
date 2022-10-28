@@ -12,7 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Mapper(componentModel = "spring", uses = {RoleMapper.class})
+@Mapper(componentModel = "spring", uses = {RoleMapper.class, AppUserModifiersSetMapper.class})
 public interface UserMapper {
     UserGetDto toDto(AppUser appUser);
 

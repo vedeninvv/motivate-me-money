@@ -2,7 +2,6 @@ package com.money.me.motivate.domain;
 
 import com.money.me.motivate.settings.Complexity;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -18,7 +17,7 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appuser_id")
     private AppUser user;
 
@@ -26,4 +25,5 @@ public class Task {
     private Complexity complexity;
     private Date createdDate = new Date();
     private boolean completed = false;
+    private Double receivedAward;
 }

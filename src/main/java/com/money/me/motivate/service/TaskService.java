@@ -9,7 +9,6 @@ import com.money.me.motivate.mapstruct.dto.task.TaskGetDto;
 import com.money.me.motivate.mapstruct.dto.task.TaskPostUpdateDto;
 import com.money.me.motivate.mapstruct.mapper.TaskMapper;
 import com.money.me.motivate.repository.TaskRepository;
-import com.money.me.motivate.repository.UserRepository;
 import com.money.me.motivate.settings.GlobalSettings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,7 +53,7 @@ public class TaskService {
     public Double calculateTaskAward(Task task) {
         return GlobalSettings.BASIC_TASK_AWARD
                 * task.getComplexity().getTaskModifier()
-                * task.getUser().getCoinsTaskModifier();
+                * task.getUser().getModifiersSet().getCoinsTaskModifier();
     }
 
     public TaskGetDto completeTask(Long taskId, String username) {
@@ -69,8 +68,10 @@ public class TaskService {
                     String.format("Con not complete task. Task with id '%d' and author '%s' has already completed", taskId, username));
         }
         AppUser user = userService.getAppUserByUsername(username);
-        userService.changeBalance(user, user.getBalance() + calculateTaskAward(task));
+        double award = calculateTaskAward(task);
+        userService.changeBalance(user, user.getBalance() + award);
         task.setCompleted(true);
+        task.setReceivedAward(award);
         taskRepository.save(task);
         return taskMapper.toDto(task);
     }

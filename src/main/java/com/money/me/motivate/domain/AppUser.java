@@ -4,19 +4,19 @@ import com.money.me.motivate.settings.GlobalSettings;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "appuser")
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class AppUser {
+public class AppUser implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,8 +27,9 @@ public class AppUser {
     private String password;
 
     private Double balance = GlobalSettings.INIT_BALANCE;
-    private Double coinsTaskModifier = GlobalSettings.INIT_COINS_TASK_MODIFIER;
-    private Double coinsPerHour = GlobalSettings.INIT_COINS_PER_HOUR;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    private AppUserModifiersSet modifiersSet;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -38,9 +39,41 @@ public class AppUser {
     )
     private Set<Role> roles = new HashSet<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Task> tasks = new ArrayList<>();
 
-    @ManyToMany
-    private List<Item> items = new ArrayList<>();
+    @OneToMany(mappedBy = "appUser", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<AppUserItem> appUserItems = new HashSet<>();
+
+    private boolean isAccountNonExpired = true;
+    private boolean isAccountNonLocked = true;
+    private boolean isCredentialsNonExpired = true;
+    private boolean isEnabled = true;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return getRoles().stream()
+                .flatMap((role) -> role.getName().getGrantedAuthorities().stream())
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return isAccountNonExpired;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return isAccountNonLocked;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return isCredentialsNonExpired;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return isEnabled;
+    }
 }

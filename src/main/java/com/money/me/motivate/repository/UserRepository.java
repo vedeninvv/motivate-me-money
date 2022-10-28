@@ -17,6 +17,6 @@ public interface UserRepository extends CrudRepository<AppUser, Long> {
     List<AppUser> findAllByRoles(Role role);
 
     @Modifying
-    @Query("update AppUser user set user.balance = user.balance + user.coinsPerHour")
+    @Query("update AppUser user set user.balance = user.balance + user.modifiersSet.coinsPerHour")
     void addCoinsToBalanceFromItemsPerHour();
 }

@@ -29,11 +29,12 @@ public interface TaskMapper {
         taskGetDto.setComplexity(task.getComplexity());
         taskGetDto.setCreatedDate(task.getCreatedDate());
         taskGetDto.setCompleted(task.isCompleted());
+        taskGetDto.setReceivedAward(task.getReceivedAward());
 
         taskGetDto.setCoinAward(
                 GlobalSettings.BASIC_TASK_AWARD
                         * task.getComplexity().getTaskModifier()
-                        * task.getUser().getCoinsTaskModifier()
+                        * task.getUser().getModifiersSet().getCoinsTaskModifier()
         );
         return taskGetDto;
     }

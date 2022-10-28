@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -21,19 +22,23 @@ public class Item {
 
     private String description;
     private Double basePrice;
-    private Double coinsTaskModifier;
-    private Double coinsPerHour;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    private ItemModifiersSet modifiersSet;
+
+    @OneToMany(mappedBy = "item", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<AppUserItem> appUserItem;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Item item = (Item) o;
-        return name.equals(item.name);
+        return id.equals(item.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(id);
     }
 }

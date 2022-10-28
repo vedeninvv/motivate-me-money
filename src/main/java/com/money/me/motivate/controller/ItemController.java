@@ -1,6 +1,8 @@
 package com.money.me.motivate.controller;
 
 import com.money.me.motivate.mapstruct.dto.item.ItemGetDto;
+import com.money.me.motivate.mapstruct.dto.item.ItemPostDto;
+import com.money.me.motivate.mapstruct.dto.item.ItemWithAmountGetDto;
 import com.money.me.motivate.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -9,7 +11,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 
 @RestController
-@RequestMapping(path = "/api/users/items",
+@RequestMapping(path = "/api/items",
         produces = "application/json"
 )
 public class ItemController {
@@ -40,8 +41,8 @@ public class ItemController {
     })
     @PostMapping
     @PreAuthorize("hasAuthority('item:write')")
-    public ItemGetDto create() {
-        throw new NotImplementedException("Coming soon...");
+    public ItemGetDto create(@RequestBody ItemPostDto itemPostDto) {
+        return itemService.createItem(itemPostDto);
     }
 
     @Operation(summary = "Update item",
@@ -59,8 +60,8 @@ public class ItemController {
     })
     @PutMapping("/{itemId}")
     @PreAuthorize("hasAuthority('item:write')")
-    public ItemGetDto update(@PathVariable Long itemId) {
-        throw new NotImplementedException("Coming soon...");
+    public ItemGetDto update(@PathVariable Long itemId, @RequestBody ItemPostDto itemPostDto) {
+        return itemService.updateItem(itemId, itemPostDto);
     }
 
     @Operation(summary = "Delete item",
@@ -68,18 +69,18 @@ public class ItemController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Item was deleted",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ItemGetDto.class))}),
+                            schema = @Schema(implementation = ItemWithAmountGetDto.class))}),
             @ApiResponse(responseCode = "403", description = "Only users with role 'ADMIN' can delete item",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ItemGetDto.class))}),
+                            schema = @Schema(implementation = ItemWithAmountGetDto.class))}),
             @ApiResponse(responseCode = "404", description = "Item not found",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ItemGetDto.class))})
+                            schema = @Schema(implementation = ItemWithAmountGetDto.class))})
     })
     @DeleteMapping("/{itemId}")
     @PreAuthorize("hasAuthority('item:write')")
     public ItemGetDto delete(@PathVariable Long itemId) {
-        throw new NotImplementedException("Coming soon...");
+        return itemService.deleteItem(itemId);
     }
 
     @Operation(summary = "Get all items",
@@ -92,7 +93,7 @@ public class ItemController {
     @GetMapping()
     @PreAuthorize("hasAuthority('item:read')")
     public Iterable<ItemGetDto> getAll() {
-        throw new NotImplementedException("Coming soon...");
+        return itemService.getAllItems();
     }
 
     @Operation(summary = "Get all items with user's amount",
@@ -100,22 +101,22 @@ public class ItemController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "All items with user's amount",
                     content = {@Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = ItemGetDto.class)))}),
+                            array = @ArraySchema(schema = @Schema(implementation = ItemWithAmountGetDto.class)))}),
             @ApiResponse(responseCode = "404", description = "User not found",
                     content = @Content),
     })
     @GetMapping("/all-with-amount")
     @PreAuthorize("hasAuthority('item:read')")
-    public Iterable<ItemGetDto> getAllWithAmount(@RequestParam String username) {
+    public Iterable<ItemWithAmountGetDto> getAllWithAmount(@RequestParam String username) {
         return itemService.getAllItemsWithAmount(username);
     }
 
-    @Operation(summary = "Buy item by id",
-            security = @SecurityRequirement(name = "basicAuth"))
+    @Operation(summary = "Buy items by id", description = "Buy items by id. if amount is not set, " +
+            "then one item will be bought", security = @SecurityRequirement(name = "basicAuth"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Item was bought",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ItemGetDto.class))}),
+                            schema = @Schema(implementation = ItemWithAmountGetDto.class))}),
             @ApiResponse(responseCode = "403", description = "Not enough coins",
                     content = @Content),
             @ApiResponse(responseCode = "404", description = "Item not found",
@@ -125,7 +126,7 @@ public class ItemController {
     })
     @PostMapping("/{itemId}/buy")
     @PreAuthorize("hasAuthority('item:read')")
-    public ItemGetDto buy(@PathVariable Long itemId, Principal principal) {
-        return itemService.buyItem(itemId, principal.getName());
+    public ItemWithAmountGetDto buy(@PathVariable Long itemId, @RequestParam(required = false) Integer amount, Principal principal) {
+        return itemService.buyItem(itemId, amount, principal.getName());
     }
 }

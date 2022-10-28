@@ -1,9 +1,7 @@
 package com.money.me.motivate.service;
 
 import com.money.me.motivate.auth.AppUserRole;
-import com.money.me.motivate.domain.AppUser;
-import com.money.me.motivate.domain.Item;
-import com.money.me.motivate.domain.Role;
+import com.money.me.motivate.domain.*;
 import com.money.me.motivate.exception.NegativeBalanceException;
 import com.money.me.motivate.exception.NotFoundException;
 import com.money.me.motivate.exception.PasswordNotCorrectException;
@@ -11,62 +9,67 @@ import com.money.me.motivate.mapstruct.dto.user.UserGetDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPostDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPutDto;
 import com.money.me.motivate.mapstruct.mapper.UserMapper;
+import com.money.me.motivate.repository.AppUserItemRepository;
+import com.money.me.motivate.repository.AppUserModifiersSetRepository;
 import com.money.me.motivate.repository.RoleRepository;
 import com.money.me.motivate.repository.UserRepository;
+import com.money.me.motivate.settings.GlobalSettings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final AppUserItemRepository appUserItemRepository;
+    private final ModifiersSetService modifiersSetService;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       RoleRepository roleRepository,
+                       AppUserItemRepository appUserItemRepository,
+                       ModifiersSetService modifiersSetService,
+                       UserMapper userMapper,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.appUserItemRepository = appUserItemRepository;
+        this.modifiersSetService = modifiersSetService;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
     }
 
     public UserGetDto createNewUser(UserPostDto userPostDto) {
-        return createAppUserWithRole(userPostDto, AppUserRole.USER);
+        userPostDto.setRoles(Set.of(AppUserRole.USER.name()));
+        return createAppUser(userPostDto);
     }
 
     public UserGetDto createNewAdmin(UserPostDto userPostDto) {
-        return createAppUserWithRole(userPostDto, AppUserRole.ADMIN);
+        userPostDto.setRoles(Set.of(AppUserRole.ADMIN.name()));
+        return createAppUser(userPostDto);
     }
 
     public UserGetDto createAppUser(UserPostDto userPostDto) {
         try {
-            for (String role: userPostDto.getRoles()) {
+            for (String role : userPostDto.getRoles()) {
                 AppUserRole.valueOf(role);
             }
         } catch (IllegalArgumentException exception) {
             throw new NotFoundException(exception.getMessage());
         }
         userPostDto.setPassword(passwordEncoder.encode(userPostDto.getPassword()));
-        AppUser user = userRepository.save(userMapper.toModel(userPostDto));
+        AppUser user = userMapper.toModel(userPostDto);
+        AppUserModifiersSet modifiersSet = new AppUserModifiersSet();
+        modifiersSet.setCoinsTaskModifier(GlobalSettings.INIT_COINS_TASK_MODIFIER);
+        modifiersSet.setCoinsPerHour(GlobalSettings.INIT_COINS_PER_HOUR);
+        user.setModifiersSet(modifiersSet);
+        userRepository.save(user);
         return userMapper.toDto(user);
-    }
-
-    public UserGetDto createAppUserWithRole(UserPostDto userPostDto, AppUserRole role) {
-        userPostDto.setRoles(Set.of());
-        userPostDto.setPassword(passwordEncoder.encode(userPostDto.getPassword()));
-        AppUser appUser = userMapper.toModel(userPostDto);
-        appUser.setRoles(Set.of(
-                roleRepository.findByName(role)
-                        .orElseThrow(() -> new NotFoundException("User role does not exist"))));
-        appUser = userRepository.save(appUser);
-        return userMapper.toDto(appUser);
     }
 
     public List<UserGetDto> getAllUsers() {
@@ -112,11 +115,27 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void addItem(AppUser user, Item item) {
-        user.setCoinsTaskModifier(user.getCoinsTaskModifier() + item.getCoinsTaskModifier());
-        user.setCoinsPerHour(user.getCoinsPerHour() + item.getCoinsPerHour());
-        user.getItems().add(item);
+    public Integer addItem(AppUser user, Item item, Integer amount) {
+        modifiersSetService.sumModifiersSet(user.getModifiersSet(),
+                modifiersSetService.multiplyModifiersSet(item.getModifiersSet(), amount));
         userRepository.save(user);
+        Optional<AppUserItem> appUserItem = appUserItemRepository.findById(new AppUserItemKey(user.getId(), item.getId()));
+        int newAmount;
+        if (appUserItem.isEmpty()) {
+            appUserItemRepository.save(
+                    new AppUserItem(
+                            new AppUserItemKey(user.getId(), item.getId()),
+                            user,
+                            item,
+                            amount
+                    ));
+            newAmount = amount;
+        } else {
+            newAmount = appUserItem.get().getAmount() + amount;
+            appUserItem.get().setAmount(newAmount);
+            appUserItemRepository.save(appUserItem.get());
+        }
+        return newAmount;
     }
 
     public UserGetDto deleteUser(Long userId) {

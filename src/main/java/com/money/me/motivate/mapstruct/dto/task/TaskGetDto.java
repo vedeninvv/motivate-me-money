@@ -13,4 +13,5 @@ public class TaskGetDto {
     private Double coinAward;
     private Date createdDate;
     private boolean completed;
+    private Double receivedAward;
 }
