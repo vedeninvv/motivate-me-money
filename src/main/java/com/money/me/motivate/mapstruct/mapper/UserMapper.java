@@ -1,7 +1,7 @@
 package com.money.me.motivate.mapstruct.mapper;
 
-import com.money.me.motivate.domain.AppUser;
-import com.money.me.motivate.domain.Role;
+import com.money.me.motivate.domain.user.AppUser;
+import com.money.me.motivate.domain.user.Role;
 import com.money.me.motivate.mapstruct.dto.user.UserGetDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPostDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPutDto;

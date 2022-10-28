@@ -1,5 +1,6 @@
 package com.money.me.motivate.controller;
 
+import com.money.me.motivate.domain.user.AppUser;
 import com.money.me.motivate.mapstruct.dto.item.ItemGetDto;
 import com.money.me.motivate.mapstruct.dto.item.ItemPostDto;
 import com.money.me.motivate.mapstruct.dto.item.ItemWithAmountGetDto;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -120,13 +122,13 @@ public class ItemController {
             @ApiResponse(responseCode = "403", description = "Not enough coins",
                     content = @Content),
             @ApiResponse(responseCode = "404", description = "Item not found",
-                    content = @Content),
-            @ApiResponse(responseCode = "500", description = "Current user must be in database, but it's not",
                     content = @Content)
     })
     @PostMapping("/{itemId}/buy")
     @PreAuthorize("hasAuthority('item:read')")
-    public ItemWithAmountGetDto buy(@PathVariable Long itemId, @RequestParam(required = false) Integer amount, Principal principal) {
-        return itemService.buyItem(itemId, amount, principal.getName());
+    public ItemWithAmountGetDto buy(@PathVariable Long itemId,
+                                    @RequestParam(required = false) Integer amount,
+                                    @AuthenticationPrincipal AppUser user) {
+        return itemService.buyItem(itemId, amount, user);
     }
 }

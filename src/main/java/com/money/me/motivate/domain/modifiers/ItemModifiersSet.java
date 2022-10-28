@@ -1,4 +1,4 @@
-package com.money.me.motivate.domain;
+package com.money.me.motivate.domain.modifiers;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

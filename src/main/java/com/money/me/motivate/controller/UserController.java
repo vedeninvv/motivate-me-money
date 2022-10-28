@@ -1,5 +1,6 @@
 package com.money.me.motivate.controller;
 
+import com.money.me.motivate.domain.user.AppUser;
 import com.money.me.motivate.exception.NotFoundException;
 import com.money.me.motivate.mapstruct.dto.user.UserGetDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPostDto;
@@ -15,12 +16,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
-import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -85,21 +85,13 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "User was updated",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = UserGetDto.class))}),
-            @ApiResponse(responseCode = "500", description = "Username not found, but must exist in database. Server error.",
-                    content = @Content),
             @ApiResponse(responseCode = "403", description = "Old password not correct",
                     content = @Content)})
     @PutMapping
     @PreAuthorize("hasAuthority('user:write')")
-    public UserGetDto update(@RequestBody @Valid UserPutDto userPutDto, Principal principal) {
-        try {
-            return userService.updateUser(principal.getName(), userPutDto);
-        } catch (UsernameNotFoundException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Server error: username must be in the database, but it's not. Exception message: " + exception.getMessage()
-            );
-        }
+    public UserGetDto update(@RequestBody @Valid UserPutDto userPutDto,
+                             @AuthenticationPrincipal AppUser user) {
+        return userService.updateUser(user, userPutDto);
     }
 
     @Operation(summary = "Delete user",
@@ -123,19 +115,11 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Info about current user",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = UserGetDto.class))}),
-            @ApiResponse(responseCode = "500", description = "User must exist, but it doesn't",
-                    content = @Content)})
+    })
     @GetMapping("/current")
     @PreAuthorize("hasAuthority('user:read')")
-    public UserGetDto currentUser(Principal principal) {
-        try {
-            return userService.getUserByUsername(principal.getName());
-        } catch (UsernameNotFoundException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Server error: username must be in the database, but it's not. Exception message: " + exception.getMessage()
-            );
-        }
+    public UserGetDto currentUser(@AuthenticationPrincipal AppUser user) {
+        return userService.getUserDto(user);
     }
 
     @Operation(summary = "Get all users",

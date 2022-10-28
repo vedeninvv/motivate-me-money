@@ -1,6 +1,6 @@
 package com.money.me.motivate.service;
 
-import com.money.me.motivate.domain.ModifiersSet;
+import com.money.me.motivate.domain.modifiers.ModifiersSet;
 import org.springframework.stereotype.Service;
 
 @Service

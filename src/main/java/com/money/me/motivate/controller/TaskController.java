@@ -1,5 +1,6 @@
 package com.money.me.motivate.controller;
 
+import com.money.me.motivate.domain.user.AppUser;
 import com.money.me.motivate.mapstruct.dto.task.TaskGetDto;
 import com.money.me.motivate.mapstruct.dto.task.TaskPostUpdateDto;
 import com.money.me.motivate.service.TaskService;
@@ -10,11 +11,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
 import java.security.Principal;
@@ -37,21 +36,13 @@ public class TaskController {
             @ApiResponse(responseCode = "200", description = "Task was created",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = TaskGetDto.class))}),
-            @ApiResponse(responseCode = "500", description = "Current user must be in database, but it's not",
-                    content = @Content),
             @ApiResponse(responseCode = "400", description = "Bad Request",
                     content = @Content)})
     @PostMapping
     @PreAuthorize("hasAuthority('ownTask:write')")
-    public TaskGetDto create(@RequestBody @Valid TaskPostUpdateDto taskPostUpdateDto, Principal principal) {
-        try {
-            return taskService.createTask(taskPostUpdateDto, principal.getName());
-        } catch (UsernameNotFoundException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Server error: username must be in the database, but it's not. Exception message: " + exception.getMessage()
-            );
-        }
+    public TaskGetDto create(@RequestBody @Valid TaskPostUpdateDto taskPostUpdateDto,
+                             @AuthenticationPrincipal AppUser user) {
+        return taskService.createTask(taskPostUpdateDto, user);
     }
 
     @Operation(summary = "Update task",
@@ -69,8 +60,10 @@ public class TaskController {
                     content = @Content)})
     @PutMapping("/{taskId}")
     @PreAuthorize("hasAuthority('ownTask:write')")
-    public TaskGetDto update(@PathVariable Long taskId, @RequestBody @Valid TaskPostUpdateDto taskPostUpdateDto, Principal principal) {
-        return taskService.updateTask(taskId, taskPostUpdateDto, principal.getName());
+    public TaskGetDto update(@PathVariable Long taskId,
+                             @RequestBody @Valid TaskPostUpdateDto taskPostUpdateDto,
+                             @AuthenticationPrincipal AppUser user) {
+        return taskService.updateTask(taskId, taskPostUpdateDto, user);
     }
 
     @Operation(summary = "Complete task",
@@ -88,8 +81,9 @@ public class TaskController {
                     content = @Content)})
     @PostMapping("/{taskId}/complete")
     @PreAuthorize("hasAuthority('ownTask:write')")
-    public TaskGetDto completeTask(@PathVariable Long taskId, Principal principal) {
-        return taskService.completeTask(taskId, principal.getName());
+    public TaskGetDto completeTask(@PathVariable Long taskId,
+                                   @AuthenticationPrincipal AppUser user) {
+        return taskService.completeTask(taskId, user);
     }
 
     @Operation(summary = "Get all tasks by user and current status",
@@ -124,7 +118,8 @@ public class TaskController {
     })
     @DeleteMapping("/{taskId}")
     @PreAuthorize("hasAuthority('ownTask:write')")
-    public TaskGetDto deleteTask(@PathVariable Long taskId, Principal principal) {
-        return taskService.deleteTask(taskId, principal.getName());
+    public TaskGetDto deleteTask(@PathVariable Long taskId,
+                                 @AuthenticationPrincipal AppUser user) {
+        return taskService.deleteTask(taskId, user);
     }
 }

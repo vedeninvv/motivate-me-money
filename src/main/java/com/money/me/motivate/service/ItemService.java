@@ -1,7 +1,7 @@
 package com.money.me.motivate.service;
 
-import com.money.me.motivate.domain.AppUser;
 import com.money.me.motivate.domain.Item;
+import com.money.me.motivate.domain.user.AppUser;
 import com.money.me.motivate.exception.NotFoundException;
 import com.money.me.motivate.mapstruct.dto.item.ItemGetDto;
 import com.money.me.motivate.mapstruct.dto.item.ItemPostDto;
@@ -50,11 +50,10 @@ public class ItemService {
         return item.getBasePrice() * amount;
     }
 
-    public ItemWithAmountGetDto buyItem(Long itemId, Integer amount, String username) {
-        AppUser user = userService.getAppUserByUsername(username);
+    public ItemWithAmountGetDto buyItem(Long itemId, Integer amount, AppUser user) {
         Item item = itemRepository.findById(itemId).orElseThrow(() -> {
             throw new NotFoundException(
-                    String.format("Item with id '%d' not found when user with username '%s' tried to buy it", itemId, username));
+                    String.format("Item with id '%d' not found when user with username '%s' tried to buy it", itemId, user.getUsername()));
         });
 
         if (amount == null) {
@@ -117,7 +116,7 @@ public class ItemService {
     public ItemGetDto deleteItem(Long itemId) {
         Item item = itemRepository.findById(itemId).orElseThrow(() -> {
             throw new NotFoundException(String.format("Item with id '%d' not found to delete", itemId));
-                });
+        });
         itemRepository.delete(item);
         return itemMapper.toDto(item);
     }

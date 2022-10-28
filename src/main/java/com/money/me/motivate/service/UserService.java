@@ -1,7 +1,12 @@
 package com.money.me.motivate.service;
 
-import com.money.me.motivate.auth.AppUserRole;
-import com.money.me.motivate.domain.*;
+import com.money.me.motivate.domain.AppUserItem;
+import com.money.me.motivate.domain.AppUserItemKey;
+import com.money.me.motivate.domain.Item;
+import com.money.me.motivate.domain.modifiers.AppUserModifiersSet;
+import com.money.me.motivate.domain.user.AppUser;
+import com.money.me.motivate.domain.user.AppUserRole;
+import com.money.me.motivate.domain.user.Role;
 import com.money.me.motivate.exception.NegativeBalanceException;
 import com.money.me.motivate.exception.NotFoundException;
 import com.money.me.motivate.exception.PasswordNotCorrectException;
@@ -10,18 +15,20 @@ import com.money.me.motivate.mapstruct.dto.user.UserPostDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPutDto;
 import com.money.me.motivate.mapstruct.mapper.UserMapper;
 import com.money.me.motivate.repository.AppUserItemRepository;
-import com.money.me.motivate.repository.AppUserModifiersSetRepository;
 import com.money.me.motivate.repository.RoleRepository;
 import com.money.me.motivate.repository.UserRepository;
 import com.money.me.motivate.settings.GlobalSettings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final AppUserItemRepository appUserItemRepository;
@@ -83,10 +90,8 @@ public class UserService {
         return userMapper.toDtoList(appUserList);
     }
 
-    public UserGetDto getUserByUsername(String username) {
-        return userMapper.toDto(
-                getAppUserByUsername(username)
-        );
+    public UserGetDto getUserDto(AppUser user) {
+        return userMapper.toDto(user);
     }
 
     public AppUser getAppUserByUsername(String username) {
@@ -94,11 +99,9 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException(String.format("Username '%s' not found", username)));
     }
 
-    public UserGetDto updateUser(String username, UserPutDto userPutDto) {
-        AppUser user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new NotFoundException(String.format("Username '%s' not found", username)));
+    public UserGetDto updateUser(AppUser user, UserPutDto userPutDto) {
         if (!passwordEncoder.matches(userPutDto.getOldPassword(), user.getPassword())) {
-            throw new PasswordNotCorrectException(String.format("Password for user '%s' not correct", username));
+            throw new PasswordNotCorrectException(String.format("Password for user '%s' not correct", user.getUsername()));
         }
         userPutDto.setPassword(passwordEncoder.encode(userPutDto.getPassword()));
         userMapper.updateModel(userPutDto, user);
@@ -144,5 +147,13 @@ public class UserService {
         UserGetDto userGetDto = userMapper.toDto(user);
         userRepository.delete(user);
         return userGetDto;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(String.format("User with username '%s' not found", username))
+                );
     }
 }

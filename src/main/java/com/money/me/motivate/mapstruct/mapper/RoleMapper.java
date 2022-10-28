@@ -1,7 +1,7 @@
 package com.money.me.motivate.mapstruct.mapper;
 
-import com.money.me.motivate.auth.AppUserRole;
-import com.money.me.motivate.domain.Role;
+import com.money.me.motivate.domain.user.AppUserRole;
+import com.money.me.motivate.domain.user.Role;
 import com.money.me.motivate.exception.NotFoundException;
 import com.money.me.motivate.repository.RoleRepository;
 import org.mapstruct.Mapper;

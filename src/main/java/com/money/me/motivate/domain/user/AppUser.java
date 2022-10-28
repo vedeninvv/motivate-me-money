@@ -1,5 +1,8 @@
-package com.money.me.motivate.domain;
+package com.money.me.motivate.domain.user;
 
+import com.money.me.motivate.domain.AppUserItem;
+import com.money.me.motivate.domain.modifiers.AppUserModifiersSet;
+import com.money.me.motivate.domain.Task;
 import com.money.me.motivate.settings.GlobalSettings;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -75,5 +78,18 @@ public class AppUser implements UserDetails {
     @Override
     public boolean isEnabled() {
         return isEnabled;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AppUser appUser = (AppUser) o;
+        return id.equals(appUser.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

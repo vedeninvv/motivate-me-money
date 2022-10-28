@@ -1,4 +1,4 @@
-package com.money.me.motivate.auth;
+package com.money.me.motivate.domain.user;
 
 public enum AppUserPermission {
     USER_READ("user:read"),

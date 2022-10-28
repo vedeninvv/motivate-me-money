@@ -1,5 +1,6 @@
-package com.money.me.motivate.domain;
+package com.money.me.motivate.domain.modifiers;
 
+import com.money.me.motivate.domain.modifiers.ModifiersSet;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;

@@ -1,7 +1,7 @@
 package com.money.me.motivate.service;
 
-import com.money.me.motivate.domain.AppUser;
 import com.money.me.motivate.domain.Task;
+import com.money.me.motivate.domain.user.AppUser;
 import com.money.me.motivate.exception.NotFoundException;
 import com.money.me.motivate.exception.TaskAlreadyCompletedException;
 import com.money.me.motivate.exception.UserNotAuthorException;
@@ -28,8 +28,7 @@ public class TaskService {
         this.taskMapper = taskMapper;
     }
 
-    public TaskGetDto createTask(TaskPostUpdateDto taskPostUpdateDto, String username) {
-        AppUser user = userService.getAppUserByUsername(username);
+    public TaskGetDto createTask(TaskPostUpdateDto taskPostUpdateDto, AppUser user) {
         Task task = taskMapper.toModel(taskPostUpdateDto);
         task.setUser(user);
         return taskMapper.toDto(taskRepository.save(task));
@@ -56,18 +55,17 @@ public class TaskService {
                 * task.getUser().getModifiersSet().getCoinsTaskModifier();
     }
 
-    public TaskGetDto completeTask(Long taskId, String username) {
+    public TaskGetDto completeTask(Long taskId, AppUser user) {
         Task task = getTaskById(taskId);
-        if (!username.equals(task.getUser().getUsername())) {
+        if (!task.getUser().equals(user)) {
             throw new UserNotAuthorException(
-                    String.format("Con not complete task. User with username '%s' is not author for task with id '%d'", username, taskId)
+                    String.format("Con not complete task. User with username '%s' is not author for task with id '%d'", user.getUsername(), taskId)
             );
         }
         if (task.isCompleted()) {
             throw new TaskAlreadyCompletedException(
-                    String.format("Con not complete task. Task with id '%d' and author '%s' has already completed", taskId, username));
+                    String.format("Con not complete task. Task with id '%d' and author '%s' has already completed", taskId, user.getUsername()));
         }
-        AppUser user = userService.getAppUserByUsername(username);
         double award = calculateTaskAward(task);
         userService.changeBalance(user, user.getBalance() + award);
         task.setCompleted(true);
@@ -76,22 +74,23 @@ public class TaskService {
         return taskMapper.toDto(task);
     }
 
-    public TaskGetDto updateTask(Long taskId, TaskPostUpdateDto taskPostUpdateDto, String username) {
+    public TaskGetDto updateTask(Long taskId, TaskPostUpdateDto taskPostUpdateDto, AppUser user) {
         Task task = getTaskById(taskId);
-        if (!username.equals(task.getUser().getUsername())) {
+        if (!task.getUser().equals(user)) {
             throw new UserNotAuthorException(
-                    String.format("Con not update task. User with username '%s' is not author for task with id '%d'", username, taskId)
+                    String.format("Con not update task. User with username '%s' is not author for task with id '%d'", user.getUsername(), taskId)
             );
         }
         taskMapper.updateModel(taskPostUpdateDto, task);
+        taskRepository.save(task);
         return taskMapper.toDto(task);
     }
 
-    public TaskGetDto deleteTask(Long taskId, String username) {
+    public TaskGetDto deleteTask(Long taskId, AppUser user) {
         Task task = getTaskById(taskId);
-        if (!username.equals(task.getUser().getUsername())) {
+        if (!task.getUser().equals(user)) {
             throw new UserNotAuthorException(
-                    String.format("Con not delete task. User with username '%s' is not author for task with id '%d'", username, taskId)
+                    String.format("Con not delete task. User with username '%s' is not author for task with id '%d'", user.getUsername(), taskId)
             );
         }
         taskRepository.delete(task);

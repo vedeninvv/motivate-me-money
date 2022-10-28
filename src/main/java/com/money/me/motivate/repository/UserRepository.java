@@ -1,7 +1,7 @@
 package com.money.me.motivate.repository;
 
-import com.money.me.motivate.domain.AppUser;
-import com.money.me.motivate.domain.Role;
+import com.money.me.motivate.domain.user.AppUser;
+import com.money.me.motivate.domain.user.Role;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;

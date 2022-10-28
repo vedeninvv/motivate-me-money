@@ -1,6 +1,6 @@
-package com.money.me.motivate.domain;
+package com.money.me.motivate.domain.user;
 
-import com.money.me.motivate.auth.AppUserRole;
+import com.money.me.motivate.domain.user.AppUserRole;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;

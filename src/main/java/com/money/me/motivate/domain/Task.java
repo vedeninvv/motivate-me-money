@@ -1,5 +1,6 @@
 package com.money.me.motivate.domain;
 
+import com.money.me.motivate.domain.user.AppUser;
 import com.money.me.motivate.settings.Complexity;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
