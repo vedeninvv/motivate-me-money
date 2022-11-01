@@ -4,6 +4,7 @@ import com.money.me.motivate.domain.user.AppUser;
 import com.money.me.motivate.domain.user.Role;
 import com.money.me.motivate.mapstruct.dto.user.UserGetDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPostDto;
+import com.money.me.motivate.mapstruct.dto.user.UserPostWithoutRolesDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPutDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
@@ -19,6 +20,7 @@ public interface UserMapper {
     List<UserGetDto> toDtoList(List<AppUser> appUserList);
 
     AppUser toModel(UserPostDto userPostDto);
+    AppUser toModelWithoutRole(UserPostWithoutRolesDto userPostWithoutRolesDto);
 
     void updateModel(UserPutDto userPutDto, @MappingTarget AppUser user);
 

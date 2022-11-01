@@ -6,12 +6,12 @@ import com.money.me.motivate.domain.Item;
 import com.money.me.motivate.domain.modifiers.AppUserModifiersSet;
 import com.money.me.motivate.domain.user.AppUser;
 import com.money.me.motivate.domain.user.AppUserRole;
-import com.money.me.motivate.domain.user.Role;
 import com.money.me.motivate.exception.NegativeBalanceException;
 import com.money.me.motivate.exception.NotFoundException;
 import com.money.me.motivate.exception.PasswordNotCorrectException;
 import com.money.me.motivate.mapstruct.dto.user.UserGetDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPostDto;
+import com.money.me.motivate.mapstruct.dto.user.UserPostWithoutRolesDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPutDto;
 import com.money.me.motivate.mapstruct.mapper.UserMapper;
 import com.money.me.motivate.repository.AppUserItemRepository;
@@ -25,7 +25,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -51,17 +54,16 @@ public class UserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public UserGetDto createNewUser(UserPostDto userPostDto) {
-        userPostDto.setRoles(Set.of(AppUserRole.USER.name()));
-        return createAppUser(userPostDto);
+    public UserGetDto createNewUser(UserPostWithoutRolesDto userPostWithoutRolesDto) {
+        userPostWithoutRolesDto.setPassword(passwordEncoder.encode(userPostWithoutRolesDto.getPassword()));
+        AppUser user = userMapper.toModelWithoutRole(userPostWithoutRolesDto);
+        user.getRoles().add(
+                roleRepository.getById(AppUserRole.USER.getId())
+        );
+        return userMapper.toDto(createAppUser(user));
     }
 
-    public UserGetDto createNewAdmin(UserPostDto userPostDto) {
-        userPostDto.setRoles(Set.of(AppUserRole.ADMIN.name()));
-        return createAppUser(userPostDto);
-    }
-
-    public UserGetDto createAppUser(UserPostDto userPostDto) {
+    public UserGetDto createAppUserWithRoles(UserPostDto userPostDto) {
         try {
             for (String role : userPostDto.getRoles()) {
                 AppUserRole.valueOf(role);
@@ -70,24 +72,21 @@ public class UserService implements UserDetailsService {
             throw new NotFoundException(exception.getMessage());
         }
         userPostDto.setPassword(passwordEncoder.encode(userPostDto.getPassword()));
-        AppUser user = userMapper.toModel(userPostDto);
+        return userMapper.toDto(
+                createAppUser(userMapper.toModel(userPostDto))
+        );
+    }
+
+    public AppUser createAppUser(AppUser user) {
         AppUserModifiersSet modifiersSet = new AppUserModifiersSet();
         modifiersSet.setCoinsTaskModifier(GlobalSettings.INIT_COINS_TASK_MODIFIER);
         modifiersSet.setCoinsPerHour(GlobalSettings.INIT_COINS_PER_HOUR);
         user.setModifiersSet(modifiersSet);
-        userRepository.save(user);
-        return userMapper.toDto(user);
+        return userRepository.save(user);
     }
 
     public List<UserGetDto> getAllUsers() {
         return userMapper.toDtoList(new ArrayList<AppUser>((Collection<? extends AppUser>) userRepository.findAll()));
-    }
-
-    public List<UserGetDto> getAllAdmins() {
-        Role adminRole = roleRepository.findByName(AppUserRole.valueOf("ADMIN"))
-                .orElseThrow(() -> new NotFoundException("Admin role does not exist"));
-        List<AppUser> appUserList = userRepository.findAllByRoles(adminRole);
-        return userMapper.toDtoList(appUserList);
     }
 
     public UserGetDto getUserDto(AppUser user) {
@@ -155,5 +154,9 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() ->
                         new UsernameNotFoundException(String.format("User with username '%s' not found", username))
                 );
+    }
+
+    public List<UserGetDto> getAllUsersByRole(AppUserRole role) {
+        return userMapper.toDtoList(userRepository.findAllByRole(role));
     }
 }

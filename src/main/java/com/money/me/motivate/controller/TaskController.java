@@ -5,6 +5,7 @@ import com.money.me.motivate.mapstruct.dto.task.TaskGetDto;
 import com.money.me.motivate.mapstruct.dto.task.TaskPostUpdateDto;
 import com.money.me.motivate.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -16,7 +17,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -41,7 +41,7 @@ public class TaskController {
     @PostMapping
     @PreAuthorize("hasAuthority('ownTask:write')")
     public TaskGetDto create(@RequestBody @Valid TaskPostUpdateDto taskPostUpdateDto,
-                             @AuthenticationPrincipal AppUser user) {
+                             @Parameter(hidden = true) @AuthenticationPrincipal AppUser user) {
         return taskService.createTask(taskPostUpdateDto, user);
     }
 
@@ -62,7 +62,7 @@ public class TaskController {
     @PreAuthorize("hasAuthority('ownTask:write')")
     public TaskGetDto update(@PathVariable Long taskId,
                              @RequestBody @Valid TaskPostUpdateDto taskPostUpdateDto,
-                             @AuthenticationPrincipal AppUser user) {
+                             @Parameter(hidden = true) @AuthenticationPrincipal AppUser user) {
         return taskService.updateTask(taskId, taskPostUpdateDto, user);
     }
 
@@ -82,7 +82,7 @@ public class TaskController {
     @PostMapping("/{taskId}/complete")
     @PreAuthorize("hasAuthority('ownTask:write')")
     public TaskGetDto completeTask(@PathVariable Long taskId,
-                                   @AuthenticationPrincipal AppUser user) {
+                                   @Parameter(hidden = true) @AuthenticationPrincipal AppUser user) {
         return taskService.completeTask(taskId, user);
     }
 
@@ -119,7 +119,7 @@ public class TaskController {
     @DeleteMapping("/{taskId}")
     @PreAuthorize("hasAuthority('ownTask:write')")
     public TaskGetDto deleteTask(@PathVariable Long taskId,
-                                 @AuthenticationPrincipal AppUser user) {
+                                 @Parameter(hidden = true) @AuthenticationPrincipal AppUser user) {
         return taskService.deleteTask(taskId, user);
     }
 }

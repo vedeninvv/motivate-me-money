@@ -6,6 +6,7 @@ import com.money.me.motivate.mapstruct.dto.item.ItemPostDto;
 import com.money.me.motivate.mapstruct.dto.item.ItemWithAmountGetDto;
 import com.money.me.motivate.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -128,7 +129,7 @@ public class ItemController {
     @PreAuthorize("hasAuthority('item:read')")
     public ItemWithAmountGetDto buy(@PathVariable Long itemId,
                                     @RequestParam(required = false) Integer amount,
-                                    @AuthenticationPrincipal AppUser user) {
+                                    @Parameter(hidden = true) @AuthenticationPrincipal AppUser user) {
         return itemService.buyItem(itemId, amount, user);
     }
 }

@@ -9,13 +9,15 @@ import java.util.stream.Collectors;
 import static com.money.me.motivate.domain.user.AppUserPermission.*;
 
 public enum AppUserRole {
-    USER(Set.of(USER_READ, USER_WRITE, ADMIN_READ, OWN_TASK_WRITE, ALL_TASK_READ, ITEM_READ)),
-    ADMIN(Set.of(USER_READ, USER_WRITE, USER_DELETE, ADMIN_READ, ADMIN_WRITE, ITEM_READ, ITEM_WRITE));
+    ADMIN(Set.of(USER_READ, USER_WRITE, USER_DELETE, ADMIN_READ, ADMIN_WRITE, ITEM_READ, ITEM_WRITE), 1L),
+    USER(Set.of(USER_READ, USER_WRITE, ADMIN_READ, OWN_TASK_WRITE, ALL_TASK_READ, ITEM_READ), 2L);
 
     private final Set<AppUserPermission> permissions;
+    private final Long id;
 
-    AppUserRole(Set<AppUserPermission> permissions) {
+    AppUserRole(Set<AppUserPermission> permissions, Long id) {
         this.permissions = permissions;
+        this.id = id;
     }
 
     public Set<AppUserPermission> getPermissions() {
@@ -28,5 +30,9 @@ public enum AppUserRole {
                 .collect(Collectors.toSet());
         permissions.add(new SimpleGrantedAuthority("ROLE_" + this.name()));
         return permissions;
+    }
+
+    public Long getId() {
+        return id;
     }
 }

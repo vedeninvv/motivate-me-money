@@ -1,12 +1,14 @@
 package com.money.me.motivate.controller;
 
 import com.money.me.motivate.domain.user.AppUser;
-import com.money.me.motivate.exception.NotFoundException;
+import com.money.me.motivate.domain.user.AppUserRole;
 import com.money.me.motivate.mapstruct.dto.user.UserGetDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPostDto;
+import com.money.me.motivate.mapstruct.dto.user.UserPostWithoutRolesDto;
 import com.money.me.motivate.mapstruct.dto.user.UserPutDto;
 import com.money.me.motivate.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,11 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -48,34 +48,18 @@ public class UserController {
     @PostMapping
     @PreAuthorize("hasAuthority('admin:write')")
     public UserGetDto create(@RequestBody @Valid UserPostDto userPostDto) {
-        return userService.createAppUser(userPostDto);
+        return userService.createAppUserWithRoles(userPostDto);
     }
 
     @Operation(summary = "Create appUser with role 'USER'")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User was created",
                     content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = UserGetDto.class))}),
+                            schema = @Schema(implementation = UserPostWithoutRolesDto.class))}),
     })
     @PostMapping("/user")
-    public UserGetDto createUser(@RequestBody @Valid UserPostDto userPostDto) {
-        return userService.createNewUser(userPostDto);
-    }
-
-    @Operation(summary = "Create appUser with role 'ADMIN'",
-            description = "Create appUser with role 'ADMIN'. Only admins can create another admins.",
-            security = @SecurityRequirement(name = "basicAuth"))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Admin was created",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = UserGetDto.class))}),
-            @ApiResponse(responseCode = "403", description = "Request from appUser without role 'ADMIN'",
-                    content = @Content)
-    })
-    @PostMapping("/admin")
-    @PreAuthorize("hasAuthority('admin:write')")
-    public UserGetDto createAdmin(@RequestBody @Valid UserPostDto userPostDto) {
-        return userService.createNewAdmin(userPostDto);
+    public UserGetDto createUser(@RequestBody @Valid UserPostWithoutRolesDto userPostWithoutRolesDto) {
+        return userService.createNewUser(userPostWithoutRolesDto);
     }
 
     @Operation(summary = "Update current user",
@@ -90,7 +74,7 @@ public class UserController {
     @PutMapping
     @PreAuthorize("hasAuthority('user:write')")
     public UserGetDto update(@RequestBody @Valid UserPutDto userPutDto,
-                             @AuthenticationPrincipal AppUser user) {
+                             @Parameter(hidden = true) @AuthenticationPrincipal AppUser user) {
         return userService.updateUser(user, userPutDto);
     }
 
@@ -118,7 +102,7 @@ public class UserController {
     })
     @GetMapping("/current")
     @PreAuthorize("hasAuthority('user:read')")
-    public UserGetDto currentUser(@AuthenticationPrincipal AppUser user) {
+    public UserGetDto currentUser(@Parameter(hidden = true) @AuthenticationPrincipal AppUser user) {
         return userService.getUserDto(user);
     }
 
@@ -132,31 +116,11 @@ public class UserController {
     })
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('user:read')")
-    public List<UserGetDto> userAll() {
-        return userService.getAllUsers();
-    }
-
-    @Operation(summary = "Get all admins",
-            description = "Get all appUsers, that has role 'ADMIN'",
-            security = @SecurityRequirement(name = "basicAuth"))
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "All admins",
-                    content = {@Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = UserGetDto.class)))}),
-            @ApiResponse(responseCode = "500", description = "Role 'ADMIN' must be in database, but it's not",
-                    content = @Content)})
-    @GetMapping("/admins/all")
-    @PreAuthorize("hasAuthority('admin:read')")
-    public List<UserGetDto> adminAll() {
-        try {
-            return userService.getAllAdmins();
-        } catch (NotFoundException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Server error: role 'ADMIN' must be in the database, but it's not. Exception message: " + exception.getMessage()
-            );
+    public List<UserGetDto> userAll(@RequestParam(required = false) AppUserRole role) {
+        if (role == null) {
+            return userService.getAllUsers();
+        } else {
+            return userService.getAllUsersByRole(role);
         }
     }
-
-
 }
