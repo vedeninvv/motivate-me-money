@@ -12,10 +12,5 @@
 * База данных: Postgres
 * Схема аутентификации: Basic
 
-### API:
-* https://motivate-me-money.herokuapp.com/api
-
-(Heroku может грузить очень долго...)
-
 ## Frontend
 В процессе... (Планируется Vue.js)
